@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "name": "外部退款审核记录（替换对象和评测集 ID 后导入）",
+  "object_id": "REPLACE_WITH_EXISTING_OBJECT_ID",
+  "dataset_id": "REPLACE_WITH_PUBLISHED_DATASET_ID",
+  "records": [
+    {
+      "case_id": "RF01",
+      "attempt_seq": 1,
+      "status": "succeeded",
+      "external_run_id": "external-example-rf01-1",
+      "output": {"eligible": true, "refund_cents": 6000}
+    }
+  ]
+}

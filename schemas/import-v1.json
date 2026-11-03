@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:skill-lab:import:1.0",
+  "title": "Skill Lab 离线运行记录导入 v1.0",
+  "description": "当前实现的 JSON 离线导入格式；不是技术方案中完整的 ZIP 交换包契约。来源由服务端强制标记为 imported。",
+  "type": "object",
+  "required": ["schema_version", "name", "object_id", "dataset_id", "records"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "name": {"type": "string", "minLength": 1, "maxLength": 200},
+    "object_id": {"type": "string", "minLength": 1},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "attachments": {
+      "type": "array", "maxItems": 999,
+      "items": {
+        "type": "object", "required": ["path", "size", "sha256", "purpose"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "size": {"type": "integer", "minimum": 0, "maximum": 10485760},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "purpose": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "records": {
+      "type": "array", "minItems": 1, "maxItems": 200,
+      "items": {
+        "type": "object",
+        "required": ["case_id", "status", "external_run_id", "attempt_seq"],
+        "additionalProperties": false,
+        "properties": {
+          "case_id": {"type": "string", "minLength": 1},
+          "attempt_seq": {"const": 1},
+          "status": {"enum": ["succeeded", "failed", "timed_out", "outcome_unknown", "cancelled"]},
+          "external_run_id": {"type": "string", "minLength": 1},
+          "output": {"type": ["object", "array", "string", "number", "boolean", "null"]}
+        }
+      }
+    }
+  }
+}
