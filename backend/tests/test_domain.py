@@ -10,6 +10,8 @@ class DomainTests(unittest.TestCase):
         self.assertEqual(summary['all_sample_pass_rate']['percent'],60.0)
         self.assertEqual(summary['determined_pass_rate']['percent'],75.0)
         self.assertEqual(summary['complete_coverage']['percent'],80.0)
+        self.assertEqual(summary['composite_score']['value'],75.0)
+        self.assertEqual(summary['dimensions']['correctness']['score'],75.0)
         self.assertEqual(gate,'not_passed')
     def test_compare_allows_only_target_package_change(self):
         a={'source':'demo','target_skill':'refund-review','skills':[{'name':'refund-review','hash':'before'}],'model':'fixture-v1','system_prompt':'fixed','verified':True,'dataset_hash':'x','policy':'baseline-v1', **{k:{'state':'not_applicable'} for k in ('generation_parameters','tools','environment','memory','initial_state','judge','limits','attempt_selection','evaluation_time','authoritative_policy_hash','trigger_mode')}}

@@ -112,6 +112,8 @@ def unarchive_experiment(id:str,data:dict=Body(...)):return service.set_archive(
 def copy_experiment(id:str):
     ex=repo.experiment(id)
     return service.create_experiment({**ex,'name':ex['name']+' · 副本','records':[]})
+@app.get('/api/v1/experiments/{id}/insights')
+def insights(id:str,revision:str='current'):return service.insights(id,revision)
 @app.get('/api/v1/experiments/{id}/events')
 def events(id:str,after:int=0):
     repo.experiment(id)

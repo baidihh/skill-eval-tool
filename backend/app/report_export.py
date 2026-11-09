@@ -33,6 +33,7 @@ def fractions(rate):
 
 def render_html(report):
     summary = report.get('summary') or {}
+    composite = summary.get('composite_score') or {}
     cases = report.get('cases') or []
     manifest = report.get('manifest') or {}
     usage = report.get('usage') or {}
@@ -52,8 +53,10 @@ def render_html(report):
 
     dimensions = []
     for key, dim in sorted((summary.get('dimensions') or {}).items()):
-        dimensions.append('<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (
-            esc(dim.get('name') or key), esc(dim.get('enabled', 0)), esc(dim.get('pass', 0)), esc(dim.get('fail', 0)),
+        dimensions.append('<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (
+            esc(dim.get('name') or key),
+            esc('%.1f' % dim['score'] if dim.get('score') is not None else '—'),
+            esc(dim.get('enabled', 0)), esc(dim.get('pass', 0)), esc(dim.get('fail', 0)),
             esc(dim.get('insufficient_evidence', 0)), esc(dim.get('not_applicable', 0))))
 
     case_html = []
@@ -159,7 +162,7 @@ footer{margin-top:38px;border-top:1px solid #dfe5da;padding-top:14px;color:#8d9a
 <h1>%s</h1>
 <p class="meta">来源 %s · 运行状态 %s · 修订 <span class="mono">%s</span> · 生成 %s</p>
 </header>
-<div class="gate %s"><h2>%s</h2><p>BASELINE-V1 · 本次固定样本。技术运行状态与业务结论独立；失败与缺失项不从分母中移除。该修订内容与费用快照不随后到数据改变。</p></div>
+<div class="gate %s"><h2>%s</h2><p>总综合得分 <b>%s</b> / 100（展示用，不参与门禁）。BASELINE-V1 · 本次固定样本。技术运行状态与业务结论独立；失败与缺失项不从分母中移除。该修订内容与费用快照不随后到数据改变。</p></div>
 <div class="cards">
 <div class="card"><span>全样本通过占比</span><b>%s</b><small>%s 题</small></div>
 <div class="card"><span>已判定题通过率</span><b>%s</b><small>%s 题</small></div>
@@ -170,7 +173,7 @@ footer{margin-top:38px;border-top:1px solid #dfe5da;padding-top:14px;color:#8d9a
 <p><b>有效关键失败</b></p><ul class="plain">%s</ul>
 <p><b>证据缺口</b></p><ul class="plain">%s</ul>
 <h2>维度结果</h2>
-<table><thead><tr><th>维度</th><th>启用</th><th>通过</th><th>不通过</th><th>证据不足</th><th>不适用</th></tr></thead><tbody>%s</tbody></table>
+<table><thead><tr><th>维度</th><th>得分</th><th>启用</th><th>通过</th><th>不通过</th><th>证据不足</th><th>不适用</th></tr></thead><tbody>%s</tbody></table>
 <h2>逐题结果</h2>
 %s
 <h2>消耗与费用（该修订观察快照）</h2>
@@ -185,6 +188,7 @@ footer{margin-top:38px;border-top:1px solid #dfe5da;padding-top:14px;color:#8d9a
         esc(report.get('name')), esc(report.get('name')), esc(SOURCE_LABELS.get(report.get('source'), report.get('source'))),
         esc(STATUS_LABELS.get(report.get('status'), report.get('status'))), esc(rev), esc(report.get('created_at')),
         'passed' if gate == 'passed' else '', esc(gate_text),
+        '%.1f' % composite['value'] if composite.get('value') is not None else '—',
         pct(summary.get('all_sample_pass_rate')), esc(fractions(summary.get('all_sample_pass_rate'))),
         pct(summary.get('determined_pass_rate')), esc(fractions(summary.get('determined_pass_rate'))),
         pct(summary.get('complete_coverage')), esc(fractions(summary.get('complete_coverage'))),

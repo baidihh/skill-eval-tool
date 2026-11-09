@@ -28,6 +28,19 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(exported.json()['content_hash'],report['content_hash'])
             duplicate=client.post('/api/v1/imports/'+preview['id']+'/confirm',json={'operation_id':'different-op'},headers=headers)
             self.assertEqual(duplicate.json()['id'],imported.json()['id'])
+    def test_composite_score_and_insights_api(self):
+        with TestClient(app) as client:
+            csrf=client.get('/api/v1/session').json()['csrf_token'];headers={'X-CSRF-Token':csrf}
+            client.post('/api/v1/demo/seed',headers=headers)
+            before=next(x for x in client.get('/api/v1/experiments').json() if x['variant']=='before')
+            report=client.get('/api/v1/reports/'+before['id']).json()
+            self.assertEqual(report['summary']['composite_score']['value'],87.5)
+            self.assertEqual(before['current_summary']['composite_score']['value'],87.5)
+            insights=client.get('/api/v1/experiments/'+before['id']+'/insights').json()
+            self.assertEqual(insights['suggestions'][0]['priority'],'P0')
+            self.assertEqual(insights['suggestions'][0]['related_file'],'SKILL.md')
+            fixed=next(x for x in client.get('/api/v1/experiments').json() if x['variant']=='after')
+            self.assertEqual(client.get('/api/v1/experiments/'+fixed['id']+'/insights').json()['suggestions'],[])
     def test_reject_foreign_host_origin(self):
         with TestClient(app) as client:
             self.assertEqual(client.get('/api/v1/session',headers={'host':'evil.example'}).status_code,403)

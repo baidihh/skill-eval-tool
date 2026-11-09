@@ -36,7 +36,15 @@ def summarize(cases, drift=False):
             dim['enabled']+=1
             result=c.get('result','insufficient_evidence')
             dim[result]=dim.get(result,0)+1
+    scores=[]
+    for dim in dimensions.values():
+        graded=dim.get('pass',0)+dim.get('fail',0)
+        dim['graded']=graded
+        dim['score']=round(100*dim['pass']/graded,1) if graded else None
+        if dim['score'] is not None:scores.append(dim['score'])
+    composite=round(sum(scores)/len(scores),1) if scores else None
     summary={**counts,'total':total,'critical_failures':critical,'dimensions':dimensions,
+      'composite_score':{'value':composite,'dimensions_counted':len(scores),'note':'仅汇总存在已判定检查的维度，用于界面展示，不参与门禁判定'},
       'execution_success_rate':rate(success,total),'determined_coverage':rate(counts['passed']+counts['not_passed'],total),
       'complete_coverage':rate(complete,total),'all_sample_pass_rate':rate(counts['passed'],total),
       'determined_pass_rate':rate(counts['passed'],counts['passed']+counts['not_passed'])}

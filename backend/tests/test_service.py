@@ -96,6 +96,19 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(ctx.exception.code,'version_conflict')
         updated=self.svc.add_object_version(obj['id'],{'version':'v9','content':'new content'})
         self.assertEqual(updated['parent_id'],obj['id'])
+    def test_insights_group_failures_and_fixed_version_has_none(self):
+        experiments=self.repo.experiments();before=next(x for x in experiments if x['variant']=='before');after=next(x for x in experiments if x['variant']=='after')
+        result=self.svc.insights(before['id'])
+        self.assertTrue(result['suggestions'])
+        top=result['suggestions'][0]
+        self.assertEqual(top['priority'],'P0');self.assertEqual(sorted(top['cases']),['RF05','RF06','RF07'])
+        self.assertEqual(top['related_file'],'SKILL.md');self.assertEqual(top['related_line'],2);self.assertFalse(top['line_verified'])
+        self.assertEqual(self.svc.insights(after['id'])['suggestions'],[])
+    def test_report_summary_has_composite_score(self):
+        ex=next(x for x in self.repo.experiments() if x['variant']=='before');summary=self.svc.report(ex['id'])['summary']
+        self.assertEqual(summary['dimensions']['correctness']['score'],62.5)
+        self.assertEqual(summary['composite_score']['dimensions_counted'],3)
+        self.assertEqual(summary['composite_score']['value'],87.5)
     def test_html_report_is_readable_and_escaped(self):
         from app.report_export import render_html
         ex=self.repo.experiments()[0];report=copy.deepcopy(self.svc.report(ex['id']))

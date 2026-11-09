@@ -1,4 +1,0 @@
-import { Card, Tag } from 'antd';
-export default function Dimensions({dimensions}: {dimensions:Record<string,any>}) {
- return <Card title="六维检查项表现" className="mb"><div className="dimension-grid">{Object.entries(dimensions||{}).map(([key,d])=><div className="dimension-item" key={key}><div><b>{d.name||key}</b>{!d.enabled&&<Tag>未启用</Tag>}</div>{d.enabled?<><div className="dimension-result"><strong>{d.pass||0}</strong><span>通过 / {d.enabled} 项</span></div><div className="dimension-segments">{['pass','fail','insufficient_evidence','grading_error','not_applicable'].map(status=><i key={status} className={status} style={{flex:d[status]||0}}/>)}</div><small>不通过 {d.fail||0} · 证据不足 {d.insufficient_evidence||0} · 评分错误 {d.grading_error||0} · 不适用 {d.not_applicable||0}</small></>:<p>本次策略没有配置该维度检查</p>}</div>)}</div></Card>;
-}

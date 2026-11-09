@@ -428,6 +428,30 @@ class Service:
                     human=next((x for x in prior['checks'] if x['id']==check['id'] and x.get('reviewed')),None)
                     if human:check.update(human)
             return self._append(c,ex,cases,'adopt-grading',data['operation_id'],data,expected=data['expected_revision_id'],usage=old['usage'])
+    def insights(self,id,revision='current'):
+        import re
+        ex=self.repo.experiment(id);report=self.report(id,revision)
+        skill_version=None;skill_line=None
+        if ex.get('object_id'):
+            try:
+                obj=self.repo.get(ex['object_id'],'object')
+                version=next((v for v in obj['versions'] if v['id']==ex.get('skill_version_id')),obj['versions'][-1])
+                skill_version=version.get('version')
+                for index,line in enumerate(version.get('content','').splitlines(),1):
+                    if re.search(r'\d+\s*(小时|天|分钟|%)',line):skill_line=index;break
+            except DomainError:pass
+        groups={}
+        for case in report['cases']:
+            for check in case.get('checks',[]):
+                if check.get('applicable',True) and check.get('result')=='fail' and not check.get('error'):
+                    group=groups.setdefault(check['id'],{'check_id':check['id'],'title':check.get('name') or check['id'],'dimension':check.get('dimension'),'critical':bool(check.get('critical')),'cases':[],'reasons':[]})
+                    group['cases'].append(case['case_id'])
+                    if check.get('reason') and check['reason'] not in group['reasons']:group['reasons'].append(check['reason'])
+        suggestions=[]
+        for group in groups.values():
+            suggestions.append({'id':group['check_id'],'priority':'P0' if group['critical'] else 'P1','title':group['title'],'dimension':DIMENSIONS.get(group['dimension'],group['dimension']),'recommendation':'对照权威政策复核该检查对应的 Skill 指令，修正后以同一评测集重新评测。','cases':group['cases'],'case_count':len(group['cases']),'reasons':group['reasons'][:3],'related_file':'SKILL.md' if skill_version else None,'related_version':skill_version,'related_line':skill_line,'line_verified':False})
+        suggestions.sort(key=lambda item:(item['priority'],-item['case_count'],item['title']))
+        return {'experiment_id':id,'revision_id':report['revision_id'],'source':report.get('source'),'suggestions':suggestions,'note':'建议基于固定报告修订自动汇总；文件行号为关键词定位结果，需人工确认后再修改 Skill。'}
     def compare(self,data):
         left=self.report(data['left_experiment_id'],data.get('left_revision_id') or 'current');right=self.report(data['right_experiment_id'],data.get('right_revision_id') or 'current')
         blockers=compare_manifests(left['manifest'],right['manifest']);pairs=[]

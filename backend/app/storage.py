@@ -78,6 +78,12 @@ class Repository:
         row=c.execute(text('SELECT payload,current_revision FROM experiments WHERE id=:id'),{'id':id}).first()
         if not row:raise DomainError('not_found','实验不存在',404)
         result=json.loads(row[0]);result['current_revision_id']=row[1]
+        result['current_summary']=result['current_gate']=None
+        if row[1]:
+            index=c.execute(text("SELECT json_extract(payload,'$.summary'),json_extract(payload,'$.gate') FROM records WHERE id=:id AND kind='report'"),{'id':row[1]}).first()
+            if index:
+                result['current_summary']=json.loads(index[0]) if index[0] else None
+                result['current_gate']=index[1]
         progress=c.execute(text("SELECT payload FROM events WHERE experiment_id=:id AND json_extract(payload,'$.type')='case_progress' ORDER BY seq DESC LIMIT 1"),{'id':id}).first()
         result['progress']=json.loads(progress[0]).get('details') if progress else None
         job=c.execute(text('SELECT state FROM jobs WHERE experiment_id=:id'),{'id':id}).first()
@@ -97,7 +103,7 @@ class Repository:
         c.execute(text('INSERT INTO experiments(id,payload,current_revision,created_at) VALUES(:id,:payload,:revision,:created_at)'),{'id':data['id'],'payload':canonical(data),'revision':revision,'created_at':data['created_at']})
     def update_experiment(self,c,ex):
         data=dict(ex)
-        for transient in ('current_revision_id','progress','job_state'):data.pop(transient,None)
+        for transient in ('current_revision_id','current_summary','current_gate','progress','job_state'):data.pop(transient,None)
         c.execute(text('UPDATE experiments SET payload=:payload WHERE id=:id'),{'id':data['id'],'payload':canonical(data)})
     def event(self,c,id,type,details=None):
         c.execute(text('INSERT INTO events(experiment_id,payload) VALUES(:id,:payload)'),{'id':id,'payload':canonical({'type':type,'details':details or {},'created_at':now()})})
